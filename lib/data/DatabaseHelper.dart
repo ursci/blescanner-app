@@ -14,6 +14,7 @@ import 'package:sqflite/sqflite.dart';
 
 class DatabaseHelper {
   final int _version = 1;
+
   static final DatabaseHelper _instance = new DatabaseHelper.internal();
   factory DatabaseHelper() => _instance;
 
@@ -65,13 +66,22 @@ class DatabaseHelper {
     await db.execute("CREATE TABLE device_setting( "
         "device_name TEXT, "
         "location_name TEXT,"
+        "upload_url TEXT,"
         "refresh_interval INTEGER DEFAULT 30"
         " )");
     await db.insert("device_setting", {
       "device_name": deviceId,
       "location_name": "Bldg1 Rm1",
+      "upload_url": "http://localhost/bleServer",
       "refresh_interval": 30
     });
+
+    await db.execute("CREATE TABLE scanned_devices("
+        "scanned_name TEXT,"
+        "scanned_id TEXT,"
+        "scanned_rssi INTEGER,"
+        "scanned_time TEXT"
+        " )");
 
     debugPrint("Creating Database");
   }
@@ -84,10 +94,46 @@ class DatabaseHelper {
     return val == 1 ? true : false;
   }
 
-  updateDeviceSettings() async {
+  insertScannedDevice(
+      String devName, String devId, int devRssi, String timeStamp) async {
     Database dbClient = await db;
 
-    await dbClient.update("device_setting", {});
+    await dbClient.insert("scanned_devices", {
+      "scanned_name": devName,
+      "scanned_id": devId,
+      "scanned_rssi": devRssi,
+      "scanned_time": timeStamp
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> getScannedDevices() async {
+    Database dbClient = await db;
+
+    List<Map<String, dynamic>> retVal = await dbClient
+        .rawQuery("select device_name,location_name,scanned_name,scanned_id,"
+            "scanned_rssi,scanned_time from device_setting,scanned_devices");
+
+    //await dbClient.query("scanned_devices");
+
+    return retVal;
+  }
+
+  deleteScannedDevices() async {
+    Database dbClient = await db;
+
+    dbClient.delete("scanned_devices");
+  }
+
+  updateDeviceSettings(
+      String devName, String locName, String url, int refInterval) async {
+    Database dbClient = await db;
+
+    await dbClient.update("device_setting", {
+      "device_name": devName,
+      "location_name": locName,
+      "upload_url": url,
+      "refresh_interval": refInterval
+    });
   }
 
   Future<Map<String, dynamic>> getDeviceSettings() async {

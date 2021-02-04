@@ -36,8 +36,11 @@ class BlePageState extends State {
 
   @override
   Widget build(BuildContext context) {
+    int refInterval = 30;
+
     if (_fb == 1 && _deviceInfo.isNotEmpty) {
       _displayWidget = startEmptyScreen();
+      refInterval = _deviceInfo["refresh_interval"];
     }
 
     Widget waitWidget = Container(
@@ -67,13 +70,12 @@ class BlePageState extends State {
                   onPressed: _fb != 1
                       ? null
                       : () {
-                          debugPrint("Button Pressed");
                           Navigator.of(context)
                               .push(MaterialPageRoute(
                                   builder: (BuildContext context) =>
                                       ConfigPage(_deviceInfo)))
                               .then((v) {
-                            debugPrint("returned from Config");
+                            getDeviceInfo();
                           });
                         },
                   icon: Icon(Icons.settings),
@@ -102,7 +104,8 @@ class BlePageState extends State {
                         _displayWidget = waitWidget;
                         scanDevices();
 
-                        _timer = Timer.periodic(Duration(seconds: 30), (timer) {
+                        _timer = Timer.periodic(Duration(seconds: refInterval),
+                            (timer) {
                           _timer = timer;
                           setState(() {
                             _displayWidget = waitWidget;
@@ -128,7 +131,7 @@ class BlePageState extends State {
   }
 
   scanDevices() async {
-    debugPrint("*** scanning ***");
+    debugPrint("*** scanning ${DateTime.now().toIso8601String()}***");
     if (_bluetoothIsOn) {
       List<ScanResult> results =
           await _flutterBlue.scan(timeout: Duration(seconds: 4)).toList();
@@ -137,6 +140,9 @@ class BlePageState extends State {
 
       List<Widget> bleList = List<Widget>();
       results = results.toSet().toList();
+
+      String dateTime = DateTime.now().toIso8601String();
+      DatabaseHelper dbh = DatabaseHelper();
 
       for (ScanResult result in results) {
         Color bColor;
@@ -169,7 +175,7 @@ class BlePageState extends State {
             title: result.device.name.length > 0
                 ? Text(result.device.name)
                 : Text("na"),
-            subtitle: Text("${result.device.id}"),
+            subtitle: Text("${result.device.id.id}"),
             trailing: Text(
               "${result.rssi}",
               style: result.rssi >= -75
@@ -179,6 +185,9 @@ class BlePageState extends State {
           ),
         );
         bleList.add(t);
+        dbh.insertScannedDevice(
+            result.device.name, result.device.id.id, result.rssi, dateTime);
+
         debugPrint(
             "Name: ${result.device.name} ,Id: ${result.device.id}, RSSI: ${result.rssi} ${result.device.type}");
       }
@@ -200,29 +209,45 @@ class BlePageState extends State {
   }
 
   Widget startEmptyScreen() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: <Widget>[
-          Text(
-            "Device ID : ${_deviceInfo["device_name"]}",
-            style: TextStyle(fontSize: 16),
-          ),
-          Text(
-            "Location Name : ${_deviceInfo["location_name"]}",
-            style: TextStyle(fontSize: 16),
-          ),
-          Text(
-            "Scan Interval : ${_deviceInfo["refresh_interval"]}",
-            style: TextStyle(fontSize: 16),
-          ),
-          SizedBox(height: 10),
-          Text(
-            "Press Button to Start the Scan.",
-            style: TextStyle(color: Colors.indigo, fontSize: 24.0),
-          ),
-        ],
+    return Container(
+      padding: EdgeInsets.all(15),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: <Widget>[
+            DataTable(dataRowHeight: 40, columns: [
+              DataColumn(label: Text("")),
+              DataColumn(label: Text("")),
+            ], rows: [
+              DataRow(cells: [
+                DataCell(Text("Device ID")),
+                DataCell(Text(
+                  _deviceInfo["device_name"],
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ))
+              ]),
+              DataRow(cells: [
+                DataCell(Text("Location Name")),
+                DataCell(Text(
+                  _deviceInfo["location_name"],
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ))
+              ]),
+              DataRow(cells: [
+                DataCell(Text("Scan Interval")),
+                DataCell(Text(
+                  "${_deviceInfo["refresh_interval"]} seconds",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ))
+              ])
+            ]),
+            SizedBox(height: 60),
+            Text(
+              "Press Button to Start the Scan.",
+              style: TextStyle(color: Colors.indigo, fontSize: 24.0),
+            ),
+          ],
+        ),
       ),
     );
   }
