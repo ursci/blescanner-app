@@ -201,9 +201,11 @@ class ConfigPageState extends State<ConfigPage> {
 
     DialogUtil.showOnSendDialog(context, "Uploading Data");
 
+    Map<String, dynamic> upData = {"device_logs": retVal};
+
     RestUtil restUtil = RestUtil();
     NetworkResult nr = await restUtil.registerData(
-        jsonEncode(retVal), {}, devData["upload_url"]);
+        jsonEncode(upData), {}, devData["upload_url"]);
 
     Navigator.of(context).pop();
 
