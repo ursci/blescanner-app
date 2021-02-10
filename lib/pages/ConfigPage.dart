@@ -231,7 +231,8 @@ class ConfigPageState extends State<ConfigPage> {
         _devName, _locName, _uploadUrl, _refInterval);
 
     DialogUtil.showCustomDialog(
-        context, "Save", "Device Settings data has been saved.", "OK");
+        context, "Save", "Device Settings data have been saved.", "OK",
+        titleColor: Colors.green);
   }
 
   @override
