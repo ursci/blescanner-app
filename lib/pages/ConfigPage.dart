@@ -204,8 +204,10 @@ class ConfigPageState extends State<ConfigPage> {
     Map<String, dynamic> upData = {"device_logs": retVal};
 
     RestUtil restUtil = RestUtil();
+    Map<String, String> headers = {"Content-Type": "application/json"};
+
     NetworkResult nr = await restUtil.registerData(
-        jsonEncode(upData), {}, devData["upload_url"]);
+        jsonEncode(upData), headers, devData["upload_url"]);
 
     Navigator.of(context).pop();
 
@@ -217,7 +219,8 @@ class ConfigPageState extends State<ConfigPage> {
           context, "Error", "Problem uploading data.", "Close");
     } else {
       await DialogUtil.showCustomDialog(
-          context, "Upload", "Data has been uploaded.", "Close");
+          context, "Upload", "Data has been uploaded completely.", "Close",
+          titleColor: Colors.green);
       dbh.deleteScannedDevices();
     }
   }
