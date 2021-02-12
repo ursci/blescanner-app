@@ -72,7 +72,7 @@ class DatabaseHelper {
     await db.insert("device_setting", {
       "device_name": deviceId,
       "location_name": "Bldg1 Rm1",
-      "upload_url": "http://localhost/bleServer",
+      "upload_url": "https://blescanner.georepublic.net/",
       "refresh_interval": 30
     });
 
